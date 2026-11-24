@@ -18,7 +18,7 @@ var AGENT=(location.hostname==='127.0.0.1'||location.hostname==='localhost'||loc
     : 'http://127.0.0.1:8787';
 
 // ---------- Navidrome (Subsonic API): впиши сюда пароль пользователя tablo ----------
-var ND={host:'http://192.168.0.203:4533', user:'tablo', pass:'ЗАМЕНИ_НА_ПАРОЛЬ'};
+var ND={host:'http://192.168.0.203:4533', user:'Despero', pass:'sKlirnot!1'};
 function hexEnc(s){
   var b=new TextEncoder().encode(s), out=[];
   for(var i=0;i<b.length;i++) out.push(('0'+b[i].toString(16)).slice(-2));
