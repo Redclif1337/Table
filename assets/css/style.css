@@ -130,7 +130,7 @@ a{color:var(--accent)}
   padding:3px 9px;border-radius:var(--radius);background:transparent}
 .badge-ok{color:var(--accent);border:1px
 
-          /* кнопки шапки: тема и палитра команд */
+  /* кнопки шапки: тема и палитра команд */
 #btnTheme,#btnCmds{
   background:var(--panel);border:1px solid var(--line);color:var(--muted);
   border-radius:6px;padding:6px 14px;font-family:var(--mono);font-size:11px;
@@ -138,4 +138,3 @@ a{color:var(--accent)}
 }
 #btnTheme:hover,#btnCmds:hover{border-color:var(--accent);color:var(--accent)}
 #btnCmds{width:52px;flex:none}
-
