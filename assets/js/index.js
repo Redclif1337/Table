@@ -1434,7 +1434,8 @@ function ndCover(albumId, size){
   var t = document.createElement('span');
   t.className = 'tabs';
   t.textContent = 'Navidrome';
-  header.appendChild(t);
+  var anchor = qs('.player-header .btn-full');
+header.insertBefore(t, anchor);
   t.onclick = function(){
     qsa('.player-header .tabs').forEach(function(x){ x.classList.remove('active'); });
     t.classList.add('active');
