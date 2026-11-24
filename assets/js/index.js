@@ -17,12 +17,18 @@ var AGENT=(location.hostname==='127.0.0.1'||location.hostname==='localhost'||loc
     ? (window.location.protocol+'//'+window.location.host)
     : 'http://127.0.0.1:8787';
 
-var libFilters = {
-  name: '',
-  artist: '',
-  genre: ''
-};
-var isOstmMode = false; // флаг режима «только OST»
+// ---------- Navidrome (Subsonic API): впиши сюда пароль пользователя tablo ----------
+var ND={host:'http://192.168.0.203:4533', user:'tablo', pass:'ЗАМЕНИ_НА_ПАРОЛЬ'};
+function hexEnc(s){
+  var b=new TextEncoder().encode(s), out=[];
+  for(var i=0;i<b.length;i++) out.push(('0'+b[i].toString(16)).slice(-2));
+  return out.join('');
+}
+function ndParams(){
+  return 'u='+encodeURIComponent(ND.user)+'&p=enc:'+hexEnc(ND.pass)+'&v=1.16.1&c=TABLO&f=json';
+}
+function ndStream(id){ return ND.host+'/rest/stream.view?'+ndParams()+'&id='+encodeURIComponent(id); }
+function ndCover(id,sz){ return ND.host+'/rest/getCoverArt.view?'+ndParams()+'&id='+encodeURIComponent(id)+(sz?'&size='+sz:''); }
 
 var reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -184,63 +190,6 @@ document.addEventListener('keydown',function(e){
   if(n===0) applyTheme('teal');                // 0 = базовая неон-зелёная
 });
 
-// Перерисовка списка треков с учетом фильтров и режима OST
-function libRenderTracks(tracks) {
-  var main = qs('#libPage .lp-main');
-  if (!main) return;
-  main.innerHTML = '';
-  var filtered = tracks.filter(function(t) {
-    var n = (t.name || '').toLowerCase();
-    var a = (t.artist || '').toLowerCase();
-    var g = (t.genre || '').toLowerCase();
-
-    // Режим OST: показываем только треки, где в названии есть «ost»
-    if (isOstmMode && n.indexOf('ost') === -1) return false;
-
-    // Фильтры по полям
-    if (libFilters.name && n.indexOf(libFilters.name) === -1) return false;
-    if (libFilters.artist && a.indexOf(libFilters.artist) === -1) return false;
-    if (libFilters.genre && g.indexOf(libFilters.genre) === -1) return false;
-
-    return true;
-  });
-
-  filtered.forEach(function(t, i) {
-    var el = document.createElement('div');
-    el.className = 'trk';
-    if (t.isNow) el.classList.add('act');
-    el.innerHTML =
-      '<span class="t">' + esc(t.name) + '</span>' +
-      '<span class="a">' + esc(t.artist || '-') + '</span>' +
-      '<span class="al">' + esc(t.album || '-') + '</span>' +
-      '<span class="d">' + (t.duration || '') + '</span>';
-    el.onclick = function() { libPlayTrack(t); };
-    main.appendChild(el);
-  });
-
-  // Счетчик видимых треков
-  var cnt = qs('#libPage .lp-head .cnt');
-  if (cnt) cnt.textContent = 'треков: ' + filtered.length;
-}
-
-// Обработчики полей фильтров
-function libSetupFilters() {
-  var inpName = qs('#libPage .lp-input[name="name"]');
-  var inpArtist = qs('#libPage .lp-input[name="artist"]');
-  var selGenre = qs('#libPage .lp-sel[name="genre"]');
-  var btnOstm = qs('#libPage .lp-more[data-type="ostm"]');
-
-  if (inpName) inpName.oninput = function() { libFilters.name = this.value.toLowerCase(); libRenderTracks(libTracks); };
-  if (inpArtist) inpArtist.oninput = function() { libFilters.artist = this.value.toLowerCase(); libRenderTracks(libTracks); };
-  if (selGenre) selGenre.onchange = function() { libFilters.genre = this.value.toLowerCase(); libRenderTracks(libTracks); };
-  if (btnOstm) btnOstm.onclick = function() {
-    isOstmMode = !isOstmMode;
-    this.textContent = isOstmMode ? 'Режим OST: ВКЛ' : 'Режим OST: ВЫКЛ';
-    this.style.color = isOstmMode ? 'var(--accent)' : '';
-    libRenderTracks(libTracks);
-  };
-}
-
 // перетаскивание отключено; одноразовая очистка старых сохранённых позиций
 if(localStorage.getItem('tablo_free_pos')){
   localStorage.removeItem('tablo_free_pos');
@@ -288,7 +237,7 @@ var COMMANDS=[
   {k:'сброс',t:'Сбросить раскладку (перезагрузка)',run:function(){ location.reload(); }},
   {k:'персонажи',t:'Открыть раздел персонажей',run:function(){ openChars(); }},
   {k:'заметки',t:'Открыть заметки',run:function(){ openNotesBig(); }},
-  {k:'библиотека',t:'Открыть библиотеку NAS (полный экран)',run:function(){ openLibPage(); }},
+  {k:'библиотека',t:'Открыть библиотеку (полный экран)',run:function(){ openLibPage(); }},
   {k:'плей',t:'Плеер: играть/пауза',run:function(){ plToggle(); }},
   {k:'повтор',t:'Плеер: повтор трека вкл/выкл',run:function(){ el('repBtn').click(); }},
   {k:'дальше',t:'Плеер: следующий трек',run:function(){ el('next').click(); }},
@@ -297,7 +246,7 @@ var COMMANDS=[
   {k:'тише',t:'Громкость −10',run:function(){ setVol(volNow-10); }},
   {k:'mute',t:'Звук вкл/выкл',run:function(){ toggleMute(); }},
   {k:'полный экран',t:'Плеер на весь экран',run:function(){ openFull(); }},
-  {k:'музыка',t:'Открыть Navidrome (музыкальный сервер)',run:function(){ window.open('http://192.168.0.203:4533','_blank'); }}
+  {k:'музыка',t:'Открыть Navidrome (музыкальный сервер)',run:function(){ window.open(ND.host,'_blank'); }}
 ];
 var pal=el('palette'), palInput=qs('.pal-input',pal), palList=qs('.pal-list',pal);
 var palSel=0, palItems=[];
@@ -697,14 +646,14 @@ function lastUpd(charName){
   return '';
 }
 
-// ---------- Enka: витрина профиля ----------
+// ---------- Enka: витрина профиля (через агента) ----------
 // Словарь ID → имя: только те, в которых уверен. Остальное — ручная привязка.
-var AVATAR_RU={10000001:'Джинн',10000002:'Аяка',10000006:'Дилок',10000007:'Путешественник',
-  10000035:'Ци Ци',10000052:'Мона',10000061:'Гань Юй',10000067:'Эула',
+var AVATAR_RU={10000001:'Джинн',10000002:'Аяка',10000003:'Джинн',10000006:'Дилок',10000007:'Путешественник',
+  10000030:'Аяка',10000035:'Ци Ци',10000047:'Итто',10000052:'Мона',10000061:'Гань Юй',10000067:'Эула',
   10000069:'Ху Тао',10000070:'Сяо',10000071:'Кадзуха',10000073:'Тарталья',
-  10000075:'Чжун Ли',10000079:'Райдэн',10000085:'Кокоми',10000086:'Аято',
+  10000075:'Чжун Ли',10000079:'Райдэн',10000082:'Сайно',10000085:'Кокоми',10000086:'Аято',
   10000087:'Яэ Мико',10000088:'Итто',10000089:'Е Лань',10000091:'Сайно',
-  10000097:'Нилу',10000098:'Коллеи',10000099:'Дори',10000100:'Тигнари',
+  10000096:'Нилу',10000097:'Нилу',10000098:'Коллеи',10000099:'Дори',10000100:'Тигнари',
   10000102:'Лайни',10000103:'Аль-Хайтам',10000104:'Нёвиллет',10000105:'Странник',
   10000106:'Фурина',10000107:'Клоринда',10000108:'Сиджвинн',10000109:'Шарлотта',
   10000110:'Навия',10000111:'Ризоттли',10000112:'Сянь Юнь',10000113:'Тиори'};
@@ -963,7 +912,7 @@ function openChars(){
   if(ENKA) enkRender(); else enkLoad();
 }
 el('btnChars').onclick=openChars;
-el('btnMusic').onclick=function(){ window.open('http://192.168.0.203:4533','_blank'); };
+el('btnMusic').onclick=function(){ window.open(ND.host,'_blank'); };
 el('cpBack').onclick=function(){ el('charsPage').classList.remove('on'); };
 
 // ---------- плеер ----------
@@ -1060,7 +1009,7 @@ function plLoad(i){
   var m=PL.tracks[i].meta;
   qs('.player-info .subtitle').textContent=m
     ? ((m.artist||'—')+(m.album?' · '+m.album:'')+(m.ost?' · '+m.ost:''))
-    : 'библиотека агента · '+PL.tracks.length+' треков';
+    : 'Navidrome · '+PL.tracks.length+' треков';
   plRenderQueue();
   libMarkActive();
   audio.play().catch(function(){});
@@ -1142,12 +1091,12 @@ function sysCmd(action){
     body:JSON.stringify({action:action})}).then(function(){ sysPoll(); }).catch(function(){});
 }
 
-// ---------- полноэкранная библиотека NAS ----------
+// ---------- полноэкранная библиотека (данные: Navidrome Subsonic API) ----------
 var LIB={data:[],loaded:false,ost:'',genre:'',artist:'',q:'',shown:300};
 var libPage=document.createElement('div'); libPage.id='libPage';
 libPage.innerHTML=
  '<div class="lp-head">'+
-  '<span class="ttl">БИБЛИОТЕКА // NAS</span>'+
+  '<span class="ttl">БИБЛИОТЕКА // NAVIDROME</span>'+
   '<span class="cnt" id="lpCount"></span>'+
   '<button class="lp-close" id="lpClose">✕</button>'+
  '</div>'+
@@ -1158,7 +1107,7 @@ libPage.innerHTML=
   '<select class="lp-sel" id="lpGenre"><option value="">все жанры</option></select>'+
   '<p class="lp-sec">Исполнитель</p>'+
   '<select class="lp-sel" id="lpArtist"><option value="">все исполнители</option></select>'+
-  '<button class="lp-more" id="lpRefresh">⟳ пересканировать</button>'+
+  '<button class="lp-more" id="lpRefresh">⟳ перечитать</button>'+
   '<div class="lp-note" id="lpScan"></div>'+
  '</div>'+
  '<div class="lp-main">'+
@@ -1195,50 +1144,64 @@ function libGenres(tracks){
   });
   return uniq(Object.keys(m));
 }
-function libFetch(){
-  var list=el('lpList');
-  list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">Загружаю библиотеку NAS…</div>';
-  fetch(AGENT+'/api/music/meta',{cache:'no-store'})
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      LIB.data=(j&&j.tracks)?j.tracks:[];
-      LIB.loaded=true;
-      var sc=j&&j.scanning;
-      el('lpScan').textContent=sc&&sc.pending>0
-        ? 'Сканирую теги: осталось '+sc.pending+' из '+sc.total+' — список обновится сам'
-        : '';
-      if(sc&&sc.pending>0) setTimeout(libFetchSilent,5000);
-      if(!LIB.data.length){
-        list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">'+
-          esc((j&&j.err)||'Библиотека пуста — проверь music_dir в config.json')+'</div>';
-        el('lpCount').textContent='';
-        return;
-      }
-      libFill(el('lpGenre'),libGenres(LIB.data),'все жанры');
-      libFill(el('lpArtist'),uniq(LIB.data.map(function(t){ return t.artist; })),'все исполнители');
-      el('lpGenre').value=LIB.genre; el('lpArtist').value=LIB.artist;
-      libRenderSide(); libRender();
-    })
-    .catch(function(){
-      list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">Агент не отвечает — запусти agent.py</div>';
-    });
+// карта трека Navidrome → формат библиотеки TABLO
+function mapSong(s){
+  return {id:s.id,
+    title:s.title||'—',
+    artist:s.artist||'',
+    album:s.album||'',
+    ost:s.album||'',          // группа в сайдбаре = альбом
+    genre:s.genre||'',
+    dur:s.duration||0,
+    cover:s.coverArt||s.albumId||''};
 }
-function libFetchSilent(){
-  fetch(AGENT+'/api/music/meta',{cache:'no-store'})
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      LIB.data=(j&&j.tracks)?j.tracks:[];
-      var sc=j&&j.scanning;
-      el('lpScan').textContent=sc&&sc.pending>0
-        ? 'Сканирую теги: осталось '+sc.pending+' из '+sc.total
-        : '';
-      if(sc&&sc.pending>0) setTimeout(libFetchSilent,5000);
-      else el('lpScan').textContent='';
-      libFill(el('lpGenre'),libGenres(LIB.data),'все жанры');
-      libFill(el('lpArtist'),uniq(LIB.data.map(function(t){ return t.artist; })),'все исполнители');
-      el('lpGenre').value=LIB.genre; el('lpArtist').value=LIB.artist;
-      libRender();
-    }).catch(function(){});
+// полная выгрузка треков: search3 пагинацией по 500
+function ndFetchAll(){
+  var list=el('lpList');
+  list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">Читаю библиотеку Navidrome…</div>';
+  el('lpScan').textContent='';
+  var all=[], offset=0;
+  function page(){
+    fetch(ND.host+'/rest/search3.view?'+ndParams()+
+          '&query=&artistCount=0&albumCount=0&songCount=500&songOffset='+offset,
+          {cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var res=j['subsonic-response'];
+        if(!res||res.status!=='ok'){
+          var err=(res&&res.error&&res.error.message)||'Navidrome ответил ошибкой';
+          list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">'+esc(err)+'</div>';
+          el('lpScan').textContent='Проверь пользователя/пароль в блоке ND в начале index.js';
+          return;
+        }
+        var songs=(res.searchResult3&&res.searchResult3.song)||[];
+        all=all.concat(songs);
+        if(songs.length===500){
+          offset+=500;
+          el('lpScan').textContent='загружено треков: '+all.length+'…';
+          page();
+        }else{
+          LIB.data=all.map(mapSong).sort(function(a,b){
+            return (a.ost+' '+a.title).localeCompare(b.ost+' '+b.title,'ru');
+          });
+          LIB.loaded=true;
+          el('lpScan').textContent='';
+          el('lpCount').textContent='треков: '+LIB.data.length;
+          if(!LIB.data.length){
+            list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">Библиотека пуста — проверь, что Navidrome просканировал папку</div>';
+            return;
+          }
+          libFill(el('lpGenre'),libGenres(LIB.data),'все жанры');
+          libFill(el('lpArtist'),uniq(LIB.data.map(function(t){ return t.artist; })),'все исполнители');
+          el('lpGenre').value=LIB.genre; el('lpArtist').value=LIB.artist;
+          libRenderSide(); libRender();
+        }
+      })
+      .catch(function(){
+        list.innerHTML='<div class="trk" style="cursor:default;color:var(--muted)">Navidrome не отвечает — проверь адрес в блоке ND и запуск по 127.0.0.1:8787 (с Pages http к NAS блокируется)</div>';
+      });
+  }
+  page();
 }
 function libFill(sel,values,allLabel){
   sel.innerHTML='<option value="">'+allLabel+'</option>'+
@@ -1247,9 +1210,9 @@ function libFill(sel,values,allLabel){
 function libRenderSide(){
   var counts={};
   LIB.data.forEach(function(t){ counts[t.ost]=(counts[t.ost]||0)+1; });
-  var osts=uniq(LIB.data.map(function(t){ return t.ost; }));
+  var albums=uniq(LIB.data.map(function(t){ return t.ost; }));
   el('lpCount').textContent='треков: '+LIB.data.length;
-  libPage.querySelector('.lp-ost').innerHTML=osts.map(function(o){
+  libPage.querySelector('.lp-ost').innerHTML=albums.map(function(o){
     return '<button data-o="'+esc(o)+'"'+(LIB.ost===o?' class="act"':'')+'>'+
       '<span>'+esc(o)+'</span><span class="n">'+counts[o]+'</span></button>';
   }).join('');
@@ -1271,11 +1234,11 @@ function libFiltered(){
   });
 }
 function libMarkActive(){
-  var cur=(PL.idx>=0&&PL.tracks[PL.idx]&&PL.tracks[PL.idx].meta)?PL.tracks[PL.idx].meta.file:null;
+  var cur=(PL.idx>=0&&PL.tracks[PL.idx]&&PL.tracks[PL.idx].meta)?PL.tracks[PL.idx].meta.id:null;
   qsa('#lpList .trk').forEach(function(n){
     var i=+n.dataset.i;
     var f=libFilteredCache();
-    n.classList.toggle('act',!!(f[i]&&f[i].file===cur));
+    n.classList.toggle('act',!!(f[i]&&f[i].id===cur));
   });
   qsa('#lpQueue .q-row').forEach(function(n){
     var i=+n.dataset.i;
@@ -1339,7 +1302,7 @@ function libRenderMain(){
   qsa('.trk[data-i]',list).forEach(function(node){
     node.onclick=function(){ libPlay(+node.dataset.i); };
   });
-  el('lpOstTitle').textContent=LIB.ost?('OST · '+LIB.ost):'Все треки';
+  el('lpOstTitle').textContent=LIB.ost?('Альбом · '+LIB.ost):'Все треки';
   var more=el('lpMore');
   if(f.length>LIB.shown){
     more.style.display='block';
@@ -1350,25 +1313,20 @@ function libPlay(i){
   var f=_libFilteredCache||[];
   if(!f.length) return;
   tab='lib';
-  PL.tracks=f.map(function(t){
-    return {name:t.title||t.file,url:AGENT+'/music/'+encodeURIComponent(t.file),meta:t};
-  });
+  PL.tracks=f.map(function(t){ return {name:t.title,url:ndStream(t.id),meta:t}; });
   PL.idx=i;
   audio.src=PL.tracks[i].url;
   var t=PL.tracks[i].meta;
-  qs('.player-info .title').textContent=t.title||t.file;
+  qs('.player-info .title').textContent=t.title||'—';
   qs('.player-info .subtitle').textContent=
-    (t.artist||'—')+(t.album?' · '+t.album:'')+(t.ost?' · '+t.ost:'');
+    (t.artist||'—')+(t.album?' · '+t.album:'');
   plRenderQueue();
   libRender();
   audio.play().catch(function(){});
 }
 function openLibPage(){
   libPage.classList.add('on');
-  if(LIB.loaded) libRender(); else libFetch();
-    libSetupFilters();
-  libRenderTracks(libTracks);
-
+  if(LIB.loaded) libRender(); else ndFetchAll();
 }
 function closeLibPage(){ libPage.classList.remove('on'); }
 el('lpClose').onclick=closeLibPage;
@@ -1376,25 +1334,26 @@ el('lpSearch').addEventListener('input',function(e){ LIB.q=e.target.value; libRe
 el('lpGenre').addEventListener('change',function(e){ LIB.genre=e.target.value; libRender(); });
 el('lpArtist').addEventListener('change',function(e){ LIB.artist=e.target.value; libRender(); });
 el('lpMore').onclick=function(){ LIB.shown+=300; libRenderMain(); libMarkActive(); };
-el('lpRefresh').onclick=function(){
-  libFetch();
-};
+el('lpRefresh').onclick=ndFetchAll;
 
-// ---------- локальная библиотека агента (ограниченная) ----------
+// ---------- очередь плеера: первые треки из Navidrome ----------
 (function localLibLoad(){
-  fetch(AGENT+'/api/music',{cache:'no-store'})
+  fetch(ND.host+'/rest/search3.view?'+ndParams()+
+        '&query=&artistCount=0&albumCount=0&songCount=200&songOffset=0',
+        {cache:'no-store'})
     .then(function(r){ return r.json(); })
     .then(function(j){
-      if(!j.ok||!j.count) return;
-      var files=j.tracks;
-      if(files.length>1000) files=files.slice(0,1000);
-      PL.tracks=files.map(function(n){
-        return {name:cleanName(n.split(/[\\/]/).pop()),url:AGENT+'/music/'+encodeURIComponent(n)};
+      var res=j['subsonic-response'];
+      if(!res||res.status!=='ok') return;
+      var songs=(res.searchResult3&&res.searchResult3.song)||[];
+      if(!songs.length) return;
+      PL.tracks=songs.map(function(s){
+        var m=mapSong(s);
+        return {name:m.title,url:ndStream(m.id),meta:m};
       });
       plRenderQueue();
       if(tab==='local'){
-        qs('.player-info .title').textContent='Библиотека: '+j.count+' треков'+
-          (files.length<j.count?' (в очереди первые '+files.length+')':'');
+        qs('.player-info .title').textContent='Navidrome: стартовая очередь '+PL.tracks.length+' треков';
         qs('.player-info .subtitle').textContent='нажми ▶ или кликни трек в очереди · полный список — в Библиотеке';
       }
     })
