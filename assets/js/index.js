@@ -255,7 +255,8 @@ if(localStorage.getItem('tablo_free_pos')){
   var DEFS={'clock-panel':['⏱','время'],'sys-panel':['⚙','система'],
     'player-panel':['♫','плеер'],'tasks-panel':['✓','задачи'],
     'char-panel':['☺','персонаж'],'links-panel':['🔗','ссылки'],
-    'notes-panel':['✎','заметки']};
+    'notes-panel':['✎','заметки'],
+    'music-panel':['♪','сервер']};
   qsa('.w-collapse').forEach(function(b){
     b.onclick=function(){
       var w=b.closest('.widget');
@@ -286,6 +287,7 @@ var COMMANDS=[
   {k:'тема:ex8',t:'Тема · EX8',run:function(){ applyTheme('ex8'); }},
   {k:'сброс',t:'Сбросить раскладку (перезагрузка)',run:function(){ location.reload(); }},
   {k:'персонажи',t:'Открыть раздел персонажей',run:function(){ openChars(); }},
+  {k:'музыка',t:'Открыть музыкальный сервер (Navidrome)',run:function(){ openMusic(); }},
   {k:'заметки',t:'Открыть заметки',run:function(){ openNotesBig(); }},
   {k:'библиотека',t:'Открыть библиотеку NAS (полный экран)',run:function(){ openLibPage(); }},
   {k:'плей',t:'Плеер: играть/пауза',run:function(){ plToggle(); }},
@@ -961,6 +963,13 @@ function openChars(){
   if(ENKA) enkRender(); else enkLoad();
 }
 el('btnChars').onclick=openChars;
+
+// ---------- музыкальный сервер (Navidrome) ----------
+function openMusic(){
+  // когда настроишь внешний доступ — замени адрес на 'https://Redclif.quickconnect.to/music'
+  window.open('http://192.168.0.203:4533','_blank');
+}
+el('btnMusic').onclick=openMusic;
 el('cpBack').onclick=function(){ el('charsPage').classList.remove('on'); };
 
 // ---------- плеер ----------
@@ -1397,85 +1406,6 @@ el('lpRefresh').onclick=function(){
     })
     .catch(function(){ setTimeout(localLibLoad,5000); });
 })();
-// ---------- Navidrome: источник «NAS» ----------
-var ND = {
-  server: 'http://192.168.0.203:4533',
-  user: 'despero',
-  pass: 'sKlirnot!1', // после отладки смени пароль в Navidrome и здесь
-  client: 'tablo'
-};
-function ndAuth(){
-  var hex = Array.from(new TextEncoder().encode(ND.pass))
-    .map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-  return 'u=' + encodeURIComponent(ND.user) + '&p=enc:' + hex +
-         '&v=1.16.1&c=' + ND.client + '&f=json';
-}
-function ndApi(method, params){
-  var q = ndAuth();
-  for (var k in (params||{})) q += '&' + k + '=' + encodeURIComponent(params[k]);
-  return fetch(ND.server + '/rest/' + method + '.view?' + q)
-    .then(function(r){ return r.json(); })
-    .then(function(j){
-      var d = j && j['subsonic-response'];
-      if (!d || d.status !== 'ok')
-        throw new Error(d && d.error ? d.error.message : 'Navidrome не отвечает');
-      return d;
-    });
-}
-function ndCover(albumId, size){
-  return albumId ? ND.server + '/rest/getCoverArt?id=' + encodeURIComponent(albumId) +
-    '&' + ndAuth() + '&size=' + (size||128) : '';
-}
-
-// вкладка «Navidrome» в шапке плеера
-(function(){
-  var header = qs('.player-header');
-  if (!header) return;
-  var t = document.createElement('span');
-  t.className = 'tabs';
-  t.textContent = 'Navidrome';
-  var anchor = qs('.player-header .btn-full');
-header.insertBefore(t, anchor);
-  t.onclick = function(){
-    qsa('.player-header .tabs').forEach(function(x){ x.classList.remove('active'); });
-    t.classList.add('active');
-    tab = 'nd'; clearInterval(sysTimer);
-    var art = qs('.player-art');
-    art.textContent = '♪'; art.style.backgroundImage = '';
-    qs('.player-info .title').textContent = 'Navidrome: загрузка…';
-    ndApi('search3', { query:'', songCount:'3000', artistCount:'0', albumCount:'0' })
-      .then(function(d){
-        var songs = (d.searchResult3 && d.searchResult3.song) || [];
-        PL.tracks = songs.map(function(s){
-          return { name: s.title,
-            url: ND.server + '/rest/stream?id=' + encodeURIComponent(s.id) + '&' + ndAuth(),
-            meta: { title: s.title, artist: s.artist, album: s.album,
-                    songId: s.id, albumId: s.albumId } };
-        });
-        PL.idx = -1;
-        qs('.player-info .title').textContent = 'Navidrome: ' + PL.tracks.length + ' треков';
-        qs('.player-info .subtitle').textContent = 'нажми ▶ — заиграет первый трек';
-        plRenderQueue();
-      })
-      .catch(function(e){
-        qs('.player-info .title').textContent = 'Navidrome недоступен';
-        qs('.player-info .subtitle').textContent = e.message;
-      });
-  };
-})();
-
-// обложка в мини-плеере для треков Navidrome
-var _plLoad = plLoad;
-plLoad = function(i){
-  _plLoad(i);
-  var t = PL.tracks[i], art = qs('.player-art');
-  if (t && t.meta && t.meta.albumId && art){
-    art.style.backgroundImage = 'url("' + ndCover(t.meta.albumId, 128) + '")';
-    art.style.backgroundSize = 'cover';
-    art.style.backgroundPosition = 'center';
-    art.textContent = '';
-  } else if (art){ art.style.backgroundImage = ''; }
-};
 
 // ---------- подвал ----------
 var foot=el('foot');
