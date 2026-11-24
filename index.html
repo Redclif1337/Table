@@ -34,6 +34,15 @@ a{color:var(--accent)}
 #cmdwrap input:focus{border-color:var(--accent)}
 .hint{font:10px var(--mono);color:var(--muted);letter-spacing:.1em}
 
+/* кнопки шапки: тема и палитра команд */
+#btnTheme,#btnCmds{
+  background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  border-radius:6px;padding:6px 14px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;cursor:pointer;transition:border-color .3s,color .3s;
+}
+#btnTheme:hover,#btnCmds:hover{border-color:var(--accent);color:var(--accent)}
+#btnCmds{width:52px;flex:none}
+
 /* сетка виджетов */
 #hud{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:14px;
   padding:14px 22px 40px;align-items:start}
@@ -79,6 +88,10 @@ a{color:var(--accent)}
 #notesInline{width:100%;min-height:110px;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:6px;
   color:var(--text);font:13px/1.6 var(--h-font);padding:10px;resize:vertical;outline:none}
 #notesInline:focus{border-color:var(--accent)}
+.notes-status{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;height:14px}
+.notes-more{margin-top:4px;background:none;border:none;color:var(--muted);font-family:var(--mono);
+  font-size:10px;letter-spacing:.1em;cursor:pointer;padding:0}
+.notes-more:hover{color:var(--accent)}
 
 #foot{position:relative;z-index:2;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);padding:10px 0 20px}
 #foot code{color:var(--accent)}
@@ -170,10 +183,12 @@ a{color:var(--accent)}
 <header class="topbar">
   <div id="cmdwrap">
     <input id="cmdInput" placeholder="Поиск или команда…" autocomplete="off">
-    <button id="btnCmds" class="tabs" title="Палитра команд">⌘K</button>
+    <button id="btnCmds" title="Палитра команд">⌘K</button>
   </div>
-  <div class="hint">Нажмите F11, чтобы выйти из полноэкранного режима</div>
-  <button id="btnTheme" class="tabs">◈ тема</button>
+  <div style="display:flex;gap:12px;align-items:center">
+    <span class="hint">Нажмите F11, чтобы выйти из полноэкранного режима</span>
+    <button id="btnTheme">◈ тема</button>
+  </div>
 </header>
 
 <div id="hud">
