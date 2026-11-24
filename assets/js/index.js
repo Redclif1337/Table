@@ -287,7 +287,6 @@ var COMMANDS=[
   {k:'тема:ex8',t:'Тема · EX8',run:function(){ applyTheme('ex8'); }},
   {k:'сброс',t:'Сбросить раскладку (перезагрузка)',run:function(){ location.reload(); }},
   {k:'персонажи',t:'Открыть раздел персонажей',run:function(){ openChars(); }},
-  {k:'музыка',t:'Открыть музыкальный сервер (Navidrome)',run:function(){ openMusic(); }},
   {k:'заметки',t:'Открыть заметки',run:function(){ openNotesBig(); }},
   {k:'библиотека',t:'Открыть библиотеку NAS (полный экран)',run:function(){ openLibPage(); }},
   {k:'плей',t:'Плеер: играть/пауза',run:function(){ plToggle(); }},
@@ -297,7 +296,8 @@ var COMMANDS=[
   {k:'громче',t:'Громкость +10',run:function(){ setVol(volNow+10); }},
   {k:'тише',t:'Громкость −10',run:function(){ setVol(volNow-10); }},
   {k:'mute',t:'Звук вкл/выкл',run:function(){ toggleMute(); }},
-  {k:'полный экран',t:'Плеер на весь экран',run:function(){ openFull(); }}
+  {k:'полный экран',t:'Плеер на весь экран',run:function(){ openFull(); }},
+  {k:'музыка',t:'Открыть Navidrome (музыкальный сервер)',run:function(){ window.open('http://192.168.0.203:4533','_blank'); }}
 ];
 var pal=el('palette'), palInput=qs('.pal-input',pal), palList=qs('.pal-list',pal);
 var palSel=0, palItems=[];
@@ -963,13 +963,7 @@ function openChars(){
   if(ENKA) enkRender(); else enkLoad();
 }
 el('btnChars').onclick=openChars;
-
-// ---------- музыкальный сервер (Navidrome) ----------
-function openMusic(){
-  // когда настроишь внешний доступ — замени адрес на 'https://Redclif.quickconnect.to/music'
-  window.open('http://192.168.0.203:4533','_blank');
-}
-el('btnMusic').onclick=openMusic;
+el('btnMusic').onclick=function(){ window.open('http://192.168.0.203:4533','_blank'); };
 el('cpBack').onclick=function(){ el('charsPage').classList.remove('on'); };
 
 // ---------- плеер ----------
