@@ -13,9 +13,9 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
     b.textContent='JS ошибка: '+(e.message||'')+(e.lineno?' (строка '+e.lineno+')':'');
   });
 })();
-var AGENT=(location.port==='8787'||location.hostname==='localhost'||location.hostname==='127.0.0.1')
-  ? (window.location.protocol+'//'+window.location.host)
-  : 'http://127.0.0.1:8787';
+var AGENT=(location.hostname==='127.0.0.1'||location.hostname==='localhost'||location.port==='8787')
+    ? (window.location.protocol+'//'+window.location.host)
+    : 'http://127.0.0.1:8787';
 
 var libFilters = {
   name: '',
