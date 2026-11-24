@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <title>TABLO</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
- <link rel="icon" href="favicon.png">
 <style>
 :root{
   --bg:#0a0d0b; --panel:#0f1310; --panel2:#141a16; --line:#1e2a22;
@@ -288,12 +287,22 @@ a{color:var(--accent)}
       </div>
     </div>
 
+
+    <div class="widget music-panel">
+      <div class="w-head"><span>Музыкальный сервер</span><button class="w-collapse">—</button></div>
+      <div class="w-body">
+        <p>Navidrome на Cerberus: вся библиотека с тегами и обложками — для тебя и друзей.</p>
+        <button class="btn-accent" id="btnMusic">ОТКРЫТЬ</button>
+      </div>
+    </div>
+
     <div class="widget links-panel">
       <div class="w-head"><span>Быстрые ссылки</span><button class="w-collapse">—</button></div>
       <div class="w-body">
         <a class="q-link" href="https://github.com" target="_blank">GitHub</a>
         <a class="q-link" href="https://hh.ru" target="_blank">hh.ru</a>
         <a class="q-link" href="https://figma.com" target="_blank">Figma</a>
+        <a class="q-link" href="http://192.168.0.203:4533" target="_blank">Navidrome</a>
       </div>
     </div>
 
